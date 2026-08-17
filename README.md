@@ -77,9 +77,9 @@ For a batch containing $K$ input samples:
 $$
 X =
 \begin{bmatrix}
-x_{0,0} & x_{0,1} & \cdots & x_{0,N-1} \
-x_{1,0} & x_{1,1} & \cdots & x_{1,N-1} \
-\vdots & \vdots & \ddots & \vdots \
+x_{0,0} & x_{0,1} & \cdots & x_{0,N-1} \\
+x_{1,0} & x_{1,1} & \cdots & x_{1,N-1} \\
+\vdots & \vdots & \ddots & \vdots \\
 x_{K-1,0} & x_{K-1,1} & \cdots & x_{K-1,N-1}
 \end{bmatrix}
 $$
