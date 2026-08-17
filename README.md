@@ -131,7 +131,7 @@ $$
 Hence, the complete computation of a fully connected layer can be expressed as:
 
 $$
-\boxed{A = f(XW+B)}
+A = f(XW+B)
 $$
 
 This transformation converts the computation of individual neurons into a matrix operation, which is more suitable for hardware acceleration.
@@ -179,9 +179,7 @@ $$
 Therefore:
 
 $$
-\boxed{
 (K \times N)(N \times M) = K \times M
-}
 $$
 
 This representation allows the computation of multiple input samples to be expressed as a matrix-matrix multiplication.
@@ -319,11 +317,9 @@ $$
 In general, the computation of an output sub-matrix is:
 
 $$
-\boxed{
 C_{ij}
 =
 \sum_k A_{ik}B_{kj}
-}
 $$
 
 Each multiplication:
@@ -349,9 +345,7 @@ is transformed into a sequence of fixed-size 16 × 16 matrix operations:
 $$
 A \times B
 \quad\longrightarrow\quad
-\left\{
 A_{ik} \times B_{kj}
-\right\}
 $$
 
 For example, the computation of the output block $C_{00}$ becomes:
