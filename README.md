@@ -1,4 +1,5 @@
 # DNN-accelerator
+
 # Mathematical Formulation and Matrix Tiling
 
 A fully connected (FC) layer in a neural network can be represented as a matrix multiplication followed by bias addition and an activation function. This representation allows the computation of a DNN layer to be mapped onto the matrix-multiplication hardware of the accelerator.
@@ -28,7 +29,7 @@ w_{N-1,0} & w_{N-1,1} & \cdots & w_{N-1,M-1}
 \end{bmatrix}
 $$
 
-and the bias is represented as:
+The bias is represented as a vector:
 
 $$
 B =
@@ -107,9 +108,7 @@ $$
 Therefore:
 
 $$
-\boxed{
-(K\times N)(N\times M) = K\times M
-}
+\boxed{(K\times N)(N\times M) = K\times M}
 $$
 
 This representation allows the computation of an entire layer to be expressed as a matrix-matrix multiplication.
@@ -144,7 +143,7 @@ $$
 32 \times 32
 $$
 
-and can then be represented as:
+The padded matrix can then be represented as:
 
 $$
 A =
@@ -245,7 +244,7 @@ is transformed into a sequence of fixed-size 16 × 16 matrix operations:
 $$
 A \times B
 \quad\longrightarrow\quad
-{A_{ik} \times B_{kj}}
+\left{A_{ik} \times B_{kj}\right}
 $$
 
 For example, the computation of $C_{00}$ becomes:
