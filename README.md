@@ -22,9 +22,9 @@ The weights connecting the input neurons to the output neurons are represented b
 $$
 W =
 \begin{bmatrix}
-w_{00} & w_{01} & \cdots & w_{0,M-1} \
-w_{10} & w_{11} & \cdots & w_{1,M-1} \
-\vdots & \vdots & \ddots & \vdots \
+w_{00} & w_{01} & \cdots & w_{0,M-1} \\
+w_{10} & w_{11} & \cdots & w_{1,M-1} \\
+\vdots & \vdots & \ddots & \vdots \\
 w_{N-1,0} & w_{N-1,1} & \cdots & w_{N-1,M-1}
 \end{bmatrix}
 $$
@@ -148,7 +148,7 @@ The padded matrix can then be represented as:
 $$
 A =
 \begin{bmatrix}
-A_{00} & A_{01} \
+A_{00} & A_{01} \\
 A_{10} & A_{11}
 \end{bmatrix}
 $$
@@ -170,7 +170,7 @@ Consider two matrices partitioned into 16 × 16 sub-matrices:
 $$
 A =
 \begin{bmatrix}
-A_{00} & A_{01} \
+A_{00} & A_{01} \\
 A_{10} & A_{11}
 \end{bmatrix}
 $$
@@ -180,7 +180,7 @@ and
 $$
 B =
 \begin{bmatrix}
-B_{00} & B_{01} \
+B_{00} & B_{01} \\
 B_{10} & B_{11}
 \end{bmatrix}
 $$
