@@ -169,11 +169,7 @@ $$
 with:
 
 $$
-X_{K \times N}
-\times
-W_{N \times M}
-=
-Y_{K \times M}
+X_{K \times N}\timesW_{N \times M}=Y_{K \times M}
 $$
 
 Therefore:
