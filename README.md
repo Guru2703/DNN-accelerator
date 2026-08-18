@@ -10,7 +10,7 @@ A Fully Connected Neural Network (FNN) consists of layers of neurons where every
 
 ![Fully Connected Neural Network](images/fnn.png)
 
-For clear mathematical implementation of Neural Network watch this video [Link](link).
+For clear mathematical implementation of Neural Network watch this video [Link](https://www.youtube.com/watch?v=aircAruvnKk&list=PLZHQObOWTQDNU6R1_67000Dx_ZCJB-3pi).
 
 For example, the connection between input neuron $x_i$ and output neuron $y_j$ has a corresponding weight $w_{ij}$.
 
