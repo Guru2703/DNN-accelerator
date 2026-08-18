@@ -16,25 +16,11 @@ For example, the connection between input neuron $x_i$ and output neuron $y_j$ h
 
 Therefore, the output of neuron $j$ before applying the activation function is:
 
-$$
-y_j =
-x_0w_{0j}
-+
-x_1w_{1j}
-+
-\cdots
-+
-x_{N-1}w_{N-1,j}
-+
-b_j
-$$
+$$y_j = x_0w_{0j} + x_1w_{1j} + \cdots + x_{N-1}w_{N-1,j} + b_j$$
 
 This can be written more compactly as:
 
-$$
-y_j =
-\sum_{i=0}^{N-1} x_iw_{ij}+b_j
-$$
+$$y_j = \sum_{i=0}^{N-1} x_iw_{ij}+b_j$$
 
 where:
 
@@ -53,88 +39,45 @@ Consider a fully connected layer with $N$ input neurons and $M$ output neurons.
 
 The input activations can be represented as a vector:
 
-$$
-X =
-\begin{bmatrix}
-x_0 & x_1 & \cdots & x_{N-1}
-\end{bmatrix}
-$$
+$$X = \begin{bmatrix} x_0 & x_1 & \cdots & x_{N-1} \end{bmatrix}$$
 
 The weights connecting the input neurons to the output neurons can be represented as a matrix:
 
-$$
-W =
-\begin{bmatrix}
-w_{00} & w_{01} & \cdots & w_{0,M-1} \\
-w_{10} & w_{11} & \cdots & w_{1,M-1} \\
-\vdots & \vdots & \ddots & \vdots \\
-w_{N-1,0} & w_{N-1,1} & \cdots & w_{N-1,M-1}
-\end{bmatrix}
-$$
+$$W = \begin{bmatrix} w_{00} & w_{01} & \cdots & w_{0,M-1} \\ w_{10} & w_{11} & \cdots & w_{1,M-1} \\ \vdots & \vdots & \ddots & \vdots \\ w_{N-1,0} & w_{N-1,1} & \cdots & w_{N-1,M-1} \end{bmatrix}$$
 
 where:
 
-$$
-W \in \mathbb{R}^{N \times M}
-$$
+$$W \in \mathbb{R}^{N \times M}$$
 
 Each column of $W$ contains all the weights connected to one output neuron.
 
 The biases can be represented as a vector:
 
-$$
-B =
-\begin{bmatrix}
-b_0 & b_1 & \cdots & b_{M-1}
-\end{bmatrix}
-$$
+$$B = \begin{bmatrix} b_0 & b_1 & \cdots & b_{M-1} \end{bmatrix}$$
 
 The output of the fully connected layer before applying the activation function is:
 
-$$
-Y = XW + B
-$$
+$$Y = XW + B$$
 
 where:
 
-$$
-X \in \mathbb{R}^{1 \times N}
-$$
-
-$$
-W \in \mathbb{R}^{N \times M}
-$$
-
-and:
-
-$$
-Y \in \mathbb{R}^{1 \times M}
-$$
+$$X \in \mathbb{R}^{1 \times N}, \qquad W \in \mathbb{R}^{N \times M}, \qquad Y \in \mathbb{R}^{1 \times M}$$
 
 Therefore:
 
-$$
-(1 \times N)(N \times M) = (1 \times M)
-$$
+$$(1 \times N)(N \times M) = (1 \times M)$$
 
 For an individual output neuron $j$:
 
-$$
-y_j =
-\sum_{i=0}^{N-1} x_iw_{ij}+b_j
-$$
+$$y_j = \sum_{i=0}^{N-1} x_iw_{ij}+b_j$$
 
 After the matrix operation, an activation function $f$ is applied element-wise:
 
-$$
-A = f(Y)
-$$
+$$A = f(Y)$$
 
 Hence, the complete computation of a fully connected layer can be expressed as:
 
-$$
-A = f(XW+B)
-$$
+$$A = f(XW+B)$$
 
 This transformation converts the computation of individual neurons into a matrix operation, which is more suitable for hardware acceleration.
 
@@ -146,43 +89,23 @@ When multiple input samples are processed together, the input vectors can be arr
 
 For a batch containing $K$ input samples:
 
-$$
-X =
-\begin{bmatrix}
-x_{0,0} & x_{0,1} & \cdots & x_{0,N-1} \\
-x_{1,0} & x_{1,1} & \cdots & x_{1,N-1} \\
-\vdots & \vdots & \ddots & \vdots \\
-x_{K-1,0} & x_{K-1,1} & \cdots & x_{K-1,N-1}
-\end{bmatrix}
-$$
+$$X = \begin{bmatrix} x_{0,0} & x_{0,1} & \cdots & x_{0,N-1} \\ x_{1,0} & x_{1,1} & \cdots & x_{1,N-1} \\ \vdots & \vdots & \ddots & \vdots \\ x_{K-1,0} & x_{K-1,1} & \cdots & x_{K-1,N-1} \end{bmatrix}$$
 
 where:
 
-$$
-X \in \mathbb{R}^{K \times N}
-$$
+$$X \in \mathbb{R}^{K \times N}$$
 
 The fully connected layer then becomes:
 
-$$
-Y = XW + B
-$$
+$$Y = XW + B$$
 
 with:
 
-$$
-X_{K \times N}
-\times
-W_{N \times M}
-=
-Y_{K \times M}
-$$
+$$X_{K \times N} \times W_{N \times M} = Y_{K \times M}$$
 
 Therefore:
 
-$$
-(K \times N)(N \times M) = K \times M
-$$
+$$(K \times N)(N \times M) = K \times M$$
 
 This representation allows the computation of multiple input samples to be expressed as a matrix-matrix multiplication.
 
@@ -194,49 +117,19 @@ The accelerator operates on fixed-size matrix blocks of **16 × 16**. Therefore,
 
 For a matrix with dimensions $H \times W$, the number of required row and column blocks is:
 
-$$
-R =
-\left\lceil
-\frac{H}{16}
-\right\rceil
-$$
-
-$$
-C =
-\left\lceil
-\frac{W}{16}
-\right\rceil
-$$
+$$R = \left\lceil \frac{H}{16} \right\rceil, \qquad C = \left\lceil \frac{W}{16} \right\rceil$$
 
 If the original matrix dimensions are not multiples of 16, the matrix is zero-padded to the next multiple of 16.
 
-For example, a matrix of size:
-
-$$
-20 \times 30
-$$
-
-is padded to:
-
-$$
-32 \times 32
-$$
+For example, a matrix of size $20 \times 30$ is padded to $32 \times 32$.
 
 The padded matrix can then be represented as a matrix of 16 × 16 sub-matrices:
 
-$$
-A =
-\begin{bmatrix}
-A_{00} & A_{01} \\
-A_{10} & A_{11}
-\end{bmatrix}
-$$
+$$A = \begin{bmatrix} A_{00} & A_{01} \\ A_{10} & A_{11} \end{bmatrix}$$
 
 where each sub-matrix has dimensions:
 
-$$
-A_{ij} \in \mathbb{R}^{16 \times 16}
-$$
+$$A_{ij} \in \mathbb{R}^{16 \times 16}$$
 
 The matrix is therefore represented as a **matrix of sub-matrices**, rather than as a single large matrix.
 
@@ -248,73 +141,31 @@ Zero-padding allows the accelerator to maintain a fixed 16 × 16 computation siz
 
 Consider two matrices partitioned into 16 × 16 sub-matrices:
 
-$$
-A =
-\begin{bmatrix}
-A_{00} & A_{01} \\
-A_{10} & A_{11}
-\end{bmatrix}
-$$
-
-and:
-
-$$
-B =
-\begin{bmatrix}
-B_{00} & B_{01} \\
-B_{10} & B_{11}
-\end{bmatrix}
-$$
+$$A = \begin{bmatrix} A_{00} & A_{01} \\ A_{10} & A_{11} \end{bmatrix} \qquad B = \begin{bmatrix} B_{00} & B_{01} \\ B_{10} & B_{11} \end{bmatrix}$$
 
 The matrix multiplication is:
 
-$$
-C = AB
-$$
+$$C = AB$$
 
 where the resulting matrix is:
 
-$$
-C =
-\begin{bmatrix}
-C_{00} & C_{01} \\
-C_{10} & C_{11}
-\end{bmatrix}
-$$
+$$C = \begin{bmatrix} C_{00} & C_{01} \\ C_{10} & C_{11} \end{bmatrix}$$
 
 The output sub-matrices are calculated as:
 
-$$
-C_{00}=A_{00}B_{00}+A_{01}B_{10}
-$$
+$$C_{00}=A_{00}B_{00}+A_{01}B_{10}$$
 
-$$
-C_{01}=A_{00}B_{01}+A_{01}B_{11}
-$$
+$$C_{01}=A_{00}B_{01}+A_{01}B_{11}$$
 
-$$
-C_{10}=A_{10}B_{00}+A_{11}B_{10}
-$$
+$$C_{10}=A_{10}B_{00}+A_{11}B_{10}$$
 
-$$
-C_{11}=A_{10}B_{01}+A_{11}B_{11}
-$$
+$$C_{11}=A_{10}B_{01}+A_{11}B_{11}$$
 
 In general, the computation of an output sub-matrix is:
 
-$$
-C_{ij}
-=
-\sum_k A_{ik}B_{kj}
-$$
+$$C_{ij} = \sum_k A_{ik}B_{kj}$$
 
-Each multiplication:
-
-$$
-A_{ik}B_{kj}
-$$
-
-is therefore a **16 × 16 matrix multiplication**, and the resulting matrices are accumulated to produce the corresponding output sub-matrix.
+Each multiplication $A_{ik}B_{kj}$ is therefore a **16 × 16 matrix multiplication**, and the resulting matrices are accumulated to produce the corresponding output sub-matrix.
 
 ---
 
@@ -324,59 +175,29 @@ The mathematical formulation above describes the complete matrix multiplication 
 
 The basic matrix operation supported by the accelerator is:
 
-$$
-(1 \times 16)
-\times
-(16 \times 16)
-=
-(1 \times 16)
-$$
+$$(1 \times 16) \times (16 \times 16) = (1 \times 16)$$
 
 The input activation vector is divided into groups of 16 elements.
 
 For example:
 
-$$
-X =
-\begin{bmatrix}
-x_0 & x_1 & \cdots & x_{15} &
-x_{16} & \cdots &
-x_{N-1}
-\end{bmatrix}
-$$
+$$X = \begin{bmatrix} x_0 & x_1 & \cdots & x_{15} & x_{16} & \cdots & x_{N-1} \end{bmatrix}$$
 
 Each group of 16 input values forms a $1 \times 16$ input matrix:
 
-$$
-X_0 =
-\begin{bmatrix}
-x_0 & x_1 & \cdots & x_{15}
-\end{bmatrix}
-$$
+$$X_0 = \begin{bmatrix} x_0 & x_1 & \cdots & x_{15} \end{bmatrix}$$
 
 The corresponding weights are stored as a $16 \times 16$ matrix:
 
-$$
-W_0 =
-\begin{bmatrix}
-w_{00} & w_{01} & \cdots & w_{0,15} \\
-w_{10} & w_{11} & \cdots & w_{11,15} \\
-\vdots & \vdots & \ddots & \vdots \\
-w_{15,0} & w_{15,1} & \cdots & w_{15,15}
-\end{bmatrix}
-$$
+$$W_0 = \begin{bmatrix} w_{00} & w_{01} & \cdots & w_{0,15} \\ w_{10} & w_{11} & \cdots & w_{11,15} \\ \vdots & \vdots & \ddots & \vdots \\ w_{15,0} & w_{15,1} & \cdots & w_{15,15} \end{bmatrix}$$
 
 The accelerator then computes:
 
-$$
-Y_0 = X_0W_0
-$$
+$$Y_0 = X_0W_0$$
 
 where:
 
-$$
-Y_0 \in \mathbb{R}^{1 \times 16}
-$$
+$$Y_0 \in \mathbb{R}^{1 \times 16}$$
 
 This produces 16 partial output values corresponding to a group of 16 output neurons.
 
@@ -384,55 +205,19 @@ For an input vector containing more than 16 elements, additional $1 \times 16$ i
 
 For example:
 
-$$
-X =
-\begin{bmatrix}
-X_0 & X_1
-\end{bmatrix}
-$$
+$$X = \begin{bmatrix} X_0 & X_1 \end{bmatrix}$$
 
-where:
-
-$$
-X_0 \in \mathbb{R}^{1 \times 16}
-$$
-
-and:
-
-$$
-X_1 \in \mathbb{R}^{1 \times 16}
-$$
+where $X_0 \in \mathbb{R}^{1 \times 16}$ and $X_1 \in \mathbb{R}^{1 \times 16}$.
 
 The corresponding weight matrix can be partitioned as:
 
-$$
-W =
-\begin{bmatrix}
-W_0 \\
-W_1
-\end{bmatrix}
-$$
+$$W = \begin{bmatrix} W_0 \\ W_1 \end{bmatrix}$$
 
-where:
-
-$$
-W_0 \in \mathbb{R}^{16 \times 16}
-$$
-
-and:
-
-$$
-W_1 \in \mathbb{R}^{16 \times 16}
-$$
+where $W_0 \in \mathbb{R}^{16 \times 16}$ and $W_1 \in \mathbb{R}^{16 \times 16}$.
 
 The complete output is then obtained by accumulating the partial matrix products:
 
-$$
-Y =
-X_0W_0
-+
-X_1W_1
-$$
+$$Y = X_0W_0 + X_1W_1$$
 
 Therefore, a large fully connected layer is converted into a sequence of fixed-size operations:
 
@@ -457,7 +242,7 @@ Split into 1 × 16 blocks
        Accumulation
              │
              ▼
-       Output (1×16) 
+       Output (1×16)
 ```
 
 ---
@@ -472,13 +257,7 @@ In this project, the neural-network weights and activations are quantized to **I
 
 The basic quantization operation is:
 
-$$
-q =
-\operatorname{round}
-\left(
-\frac{x}{S}
-\right)
-$$
+$$q = \text{round}\left(\frac{x}{S}\right)$$
 
 where:
 
@@ -488,15 +267,11 @@ where:
 
 For symmetric INT8 quantization, the representable range is:
 
-$$
--128 \leq q \leq 127
-$$
+$$-128 \leq q \leq 127$$
 
 The corresponding floating-point value can approximately be reconstructed using:
 
-$$
-x \approx qS
-$$
+$$x \approx qS$$
 
 Therefore, the scale determines how much the original floating-point range is compressed into the available INT8 range.
 
@@ -506,40 +281,21 @@ Therefore, the scale determines how much the original floating-point range is co
 
 For symmetric quantization, the scale is determined from the maximum absolute value in the tensor:
 
-$$
-S =
-\frac{\max(|x|)}{127}
-$$
+$$S = \frac{\max(|x|)}{127}$$
 
 The quantized value is then calculated as:
 
-$$
-q =
-\operatorname{round}
-\left(
-\frac{x}{S}
-\right)
-$$
+$$q = \text{round}\left(\frac{x}{S}\right)$$
 
-For example, if the values lie approximately within:
+For example, if the values lie approximately within $[-1,1]$ then:
 
-$$
-[-1,1]
-$$
-
-then:
-
-$$
-S = \frac{1}{127}
-$$
+$$S = \frac{1}{127}$$
 
 The available INT8 values are therefore mapped across the range $[-1,1]$ with a relatively small step size.
 
 The distance between two consecutive representable floating-point values is approximately equal to the scale:
 
-$$
-\Delta x \approx S
-$$
+$$\Delta x \approx S$$
 
 Therefore:
 
@@ -554,17 +310,9 @@ Consider two different floating-point ranges being mapped to the same INT8 range
 
 When the original values occupy a smaller numerical range, the 256 available INT8 levels are concentrated over a smaller range. Therefore, the distance between adjacent representable floating-point values is smaller.
 
-For example, with:
+For example, with $S = 0.01$, the quantization levels are approximately:
 
-$$
-S = 0.01
-$$
-
-the quantization levels are approximately:
-
-$$
-\ldots,-0.02,-0.01,0,0.01,0.02,\ldots
-$$
+$$\ldots,-0.02,-0.01,0,0.01,0.02,\ldots$$
 
 On the other hand, when the original values occupy a larger range:
 
@@ -572,31 +320,15 @@ On the other hand, when the original values occupy a larger range:
 
 the same 256 INT8 levels must cover a larger numerical range.
 
-For example, with:
+For example, with $S = 0.1$, the quantization levels become:
 
-$$
-S = 0.1
-$$
-
-the quantization levels become:
-
-$$
-\ldots,-0.2,-0.1,0,0.1,0.2,\ldots
-$$
+$$\ldots,-0.2,-0.1,0,0.1,0.2,\ldots$$
 
 Thus, values that are close together in the original floating-point representation may be mapped to the same integer value when the scale is large.
 
 This illustrates the trade-off in quantization:
 
-$$
-\boxed{
-\text{Larger represented range}
-\rightarrow
-\text{larger scale}
-\rightarrow
-\text{lower resolution}
-}
-$$
+> **Larger represented range → larger scale → lower resolution**
 
 ---
 
@@ -606,48 +338,23 @@ The trained floating-point weights are converted to INT8 before being stored in 
 
 For a weight matrix $W$, the weight scale is calculated as:
 
-$$
-S_W =
-\frac{\max(|W|)}{127}
-$$
+$$S_W = \frac{\max(|W|)}{127}$$
 
 Each weight is then quantized using:
 
-$$
-W_q =
-\operatorname{round}
-\left(
-\frac{W}{S_W}
-\right)
-$$
+$$W_q = \text{round}\left(\frac{W}{S_W}\right)$$
 
 where:
 
-$$
--128 \leq W_q \leq 127
-$$
+$$-128 \leq W_q \leq 127$$
 
 The approximate floating-point weight can be recovered using:
 
-$$
-W \approx W_qS_W
-$$
+$$W \approx W_qS_W$$
 
 The use of INT8 weights significantly reduces the amount of memory required to store the neural-network parameters compared with FP32 representation.
 
-For example:
-
-$$
-\text{FP32} = 32\text{ bits/value}
-$$
-
-while:
-
-$$
-\text{INT8} = 8\text{ bits/value}
-$$
-
-Therefore, an INT8 representation requires approximately one-fourth of the storage required by FP32.
+For example, FP32 uses 32 bits/value while INT8 uses 8 bits/value. Therefore, an INT8 representation requires approximately one-fourth of the storage required by FP32.
 
 ---
 
@@ -661,20 +368,11 @@ Representative input samples are passed through the floating-point model, and th
 
 The scale for an activation tensor is then calculated from its maximum absolute value:
 
-$$
-S_X =
-\frac{\max(|X|)}{127}
-$$
+$$S_X = \frac{\max(|X|)}{127}$$
 
 The activation is quantized using:
 
-$$
-X_q =
-\operatorname{round}
-\left(
-\frac{X}{S_X}
-\right)
-$$
+$$X_q = \text{round}\left(\frac{X}{S_X}\right)$$
 
 The implementation collects separate ranges for:
 
@@ -690,35 +388,19 @@ These ranges are used to determine the corresponding quantization scales during 
 
 A fully connected layer performs:
 
-$$
-Y = XW+B
-$$
+$$Y = XW+B$$
 
 followed by an activation function:
 
-$$
-A=f(Y)
-$$
+$$A=f(Y)$$
 
 In the quantized accelerator, these stages use different numerical representations.
 
 The input activations and weights are represented using INT8:
 
-$$
-X_q \in \mathrm{INT8}
-$$
+$$X_q \in \text{INT8}, \qquad W_q \in \text{INT8}$$
 
-$$
-W_q \in \mathrm{INT8}
-$$
-
-The multiplication is therefore:
-
-$$
-X_qW_q
-$$
-
-Since many INT8 multiplication results must be accumulated, a wider representation is required for the accumulator.
+The multiplication is therefore $X_qW_q$. Since many INT8 multiplication results must be accumulated, a wider representation is required for the accumulator.
 
 The bias is also represented using INT32.
 
@@ -757,55 +439,31 @@ The important point is that quantization is not simply converting every value to
 
 The output of the matrix multiplication and bias addition is the pre-activation value:
 
-$$
-Y = XW+B
-$$
+$$Y = XW+B$$
 
 In the quantized implementation, the input activations and weights are represented using INT8:
 
-$$
-X_q \in \mathrm{INT8}, \qquad W_q \in \mathrm{INT8}
-$$
+$$X_q \in \text{INT8}, \qquad W_q \in \text{INT8}$$
 
 The multiplication results are accumulated using a wider representation:
 
-$$
-Y_{\mathrm{acc}} = X_qW_q+B_q
-$$
+$$Y_{\text{acc}} = X_qW_q+B_q$$
 
-where $Y_{\mathrm{acc}}$ is represented using INT32.
+where $Y_{\text{acc}}$ is represented using INT32.
 
 The accumulated result must then be scaled back to the quantization range required by the next stage.
 
-If:
+If $X \approx X_qS_X$ and $W \approx W_qS_W$, then:
 
-$$
-X \approx X_qS_X
-$$
-
-and:
-
-$$
-W \approx W_qS_W
-$$
-
-then:
-
-$$
-XW \approx X_qW_qS_XS_W
-$$
+$$XW \approx X_qW_qS_XS_W$$
 
 Let $S_A$ be the scale of the output activation. The requantized result can therefore be represented as:
 
-$$
-Y_q = \operatorname{round}\left(Y_{\mathrm{acc}} \frac{S_XS_W}{S_A}\right)
-$$
+$$Y_q = \text{round}\left(Y_{\text{acc}} \cdot \frac{S_XS_W}{S_A}\right)$$
 
 The resulting value is converted to INT8:
 
-$$
--128 \leq Y_q \leq 127
-$$
+$$-128 \leq Y_q \leq 127$$
 
 The computation before the activation function can therefore be represented as:
 
@@ -836,43 +494,27 @@ The resulting INT8 pre-activation value is then passed to the activation functio
 
 The activation function transforms the pre-activation value:
 
-$$
-A=f(Y)
-$$
+$$A=f(Y)$$
 
 Different activation functions produce different numerical ranges.
 
 For example, the ReLU activation function is:
 
-$$
-f(x)=\max(0,x)
-$$
+$$f(x)=\max(0,x)$$
 
-Therefore:
-
-$$
-A\geq 0
-$$
+Therefore $A\geq 0$.
 
 For the sigmoid activation function:
 
-$$
-f(x)=\frac{1}{1+e^{-x}}
-$$
+$$f(x)=\frac{1}{1+e^{-x}}$$
 
-and:
-
-$$
-0<A<1
-$$
+and $0<A<1$.
 
 Since the output range of the activation function can be different from the pre-activation range, the activation output can require a separate quantization scale.
 
 The activation output is quantized using:
 
-$$
-A_q = \operatorname{round}\left(\frac{A}{S_A}\right)
-$$
+$$A_q = \text{round}\left(\frac{A}{S_A}\right)$$
 
 where $S_A$ is the scale corresponding to the activation output.
 
@@ -909,23 +551,11 @@ Nonlinear activation functions such as sigmoid require additional computation if
 
 To reduce this computational complexity, the accelerator uses a 256-entry Lookup Table (LUT).
 
-For an INT8 input:
+For an INT8 input $-128 \leq x_q \leq 127$, the input can be mapped to a LUT index using:
 
-$$
--128 \leq x_q \leq 127
-$$
+$$\text{index} = x_q + 128$$
 
-the input can be mapped to a LUT index using:
-
-$$
-\text{index} = x_q + 128
-$$
-
-This produces an index in the range:
-
-$$
-0 \leq \text{index} \leq 255
-$$
+This produces an index in the range $0 \leq \text{index} \leq 255$.
 
 Therefore, the complete INT8 input range can be represented using a 256-entry LUT.
 
@@ -944,27 +574,13 @@ INT8 Pre-Activation
  INT8 Activation
 ```
 
-For example, for the ReLU activation:
+For example, for the ReLU activation $f(x)=\max(0,x)$, the LUT can store the corresponding quantized output values.
 
-$$
-f(x)=\max(0,x)
-$$
-
-the LUT can store the corresponding quantized output values.
-
-For the sigmoid activation:
-
-$$
-f(x)=\frac{1}{1+e^{-x}}
-$$
-
-the LUT contains precomputed sigmoid values corresponding to the possible quantized input values.
+For the sigmoid activation $f(x)=\dfrac{1}{1+e^{-x}}$, the LUT contains precomputed sigmoid values corresponding to the possible quantized input values.
 
 Instead of calculating the sigmoid function during inference, the accelerator performs a lookup:
 
-$$
-x_q \rightarrow \text{LUT Index} \rightarrow f(x_q)
-$$
+$$x_q \rightarrow \text{LUT Index} \rightarrow f(x_q)$$
 
 This replaces the direct computation of the nonlinear function with a simple memory lookup operation.
 
@@ -974,9 +590,7 @@ This replaces the direct computation of the nonlinear function with a simple mem
 
 Combining the matrix operation, quantization, requantization, and activation stages, a single quantized FNN layer can be represented as:
 
-$$
-X_qW_q \rightarrow \text{INT32 Accumulation} \rightarrow \text{Bias Addition} \rightarrow \text{Requantization} \rightarrow \text{INT8 Pre-Activation} \rightarrow \text{Activation} \rightarrow A_q
-$$
+$$X_qW_q \rightarrow \text{INT32 Accumulation} \rightarrow \text{Bias Addition} \rightarrow \text{Requantization} \rightarrow \text{INT8 Pre-Activation} \rightarrow \text{Activation} \rightarrow A_q$$
 
 The complete layer can therefore be represented as:
 
@@ -1013,9 +627,7 @@ The complete layer can therefore be represented as:
 
 The output activation of one layer becomes the input activation of the next layer:
 
-$$
-A_q^{(l)} \rightarrow X_q^{(l+1)}
-$$
+$$A_q^{(l)} \rightarrow X_q^{(l+1)}$$
 
 The same process is then repeated for every layer of the neural network.
 
@@ -1067,17 +679,13 @@ The complete inference process can be summarized as:
 
 For each layer, the accelerator performs the fixed-size matrix operation:
 
-$$
-(1\times16)\times(16\times16)=(1\times16)
-$$
+$$(1\times16)\times(16\times16)=(1\times16)$$
 
 The resulting partial outputs are accumulated across the required input blocks and output blocks.
 
 The output activation of one layer is then used as the input to the next layer:
 
-$$
-A_q^{(l)} \rightarrow X_q^{(l+1)}
-$$
+$$A_q^{(l)} \rightarrow X_q^{(l+1)}$$
 
 Therefore, by repeating the same sequence of matrix multiplication, accumulation, bias addition, requantization, and activation for every layer, the accelerator can perform a complete quantized FNN inference.
 
@@ -1095,26 +703,15 @@ For every layer $j$, three separate ranges are tracked while the calibration inp
 
 For each calibration sample $x_i$, the floating-point forward pass is executed and the observed minimum and maximum of each tensor is appended to a running list:
 
-$$
-\text{max\_layer}[j] = \max_i \big(\max(X_i^{(j)})\big), \qquad
-\text{min\_layer}[j] = \min_i \big(\min(X_i^{(j)})\big)
-$$
+$$\text{max\_layer}[j] = \max_i \big(\max(X_i^{(j)})\big), \qquad \text{min\_layer}[j] = \min_i \big(\min(X_i^{(j)})\big)$$
 
-$$
-\text{max\_bact}[j] = \max_i \big(\max(Y_i^{(j)})\big), \qquad
-\text{min\_bact}[j] = \min_i \big(\min(Y_i^{(j)})\big)
-$$
+$$\text{max\_bact}[j] = \max_i \big(\max(Y_i^{(j)})\big), \qquad \text{min\_bact}[j] = \min_i \big(\min(Y_i^{(j)})\big)$$
 
-$$
-\text{max\_aact}[j] = \max_i \big(\max(A_i^{(j)})\big), \qquad
-\text{min\_aact}[j] = \min_i \big(\min(A_i^{(j)})\big)
-$$
+$$\text{max\_aact}[j] = \max_i \big(\max(A_i^{(j)})\big), \qquad \text{min\_aact}[j] = \min_i \big(\min(A_i^{(j)})\big)$$
 
 Once calibration is complete, each tensor's symmetric scale is derived from the largest absolute value observed across the calibration set:
 
-$$
-S = \frac{\max\big(|\text{max}|,\ |\text{min}|\big)}{127}
-$$
+$$S = \frac{\max\big(|\text{max}|,\ |\text{min}|\big)}{127}$$
 
 This produces three scales per layer:
 
@@ -1132,26 +729,17 @@ Once the per-layer scales are known, the floating-point weights and biases store
 
 **Weight quantization** follows the symmetric INT8 scheme described in Section 8, using the maximum absolute weight value of each layer as the scale:
 
-$$
-S_W^{(j)} = \frac{\max\big(|W^{(j)}|\big)}{127}, \qquad
-W_q^{(j)} = \operatorname{round}\!\left(\frac{W^{(j)}}{S_W^{(j)}}\right)
-$$
+$$S_W^{(j)} = \frac{\max\big(|W^{(j)}|\big)}{127}, \qquad W_q^{(j)} = \text{round}\left(\frac{W^{(j)}}{S_W^{(j)}}\right)$$
 
 The quantized values are then clipped to the representable INT8 range:
 
-$$
--128 \le W_q^{(j)} \le 127
-$$
+$$-128 \le W_q^{(j)} \le 127$$
 
 **Bias quantization** cannot use an independently computed scale. Because the bias is added directly to the INT32 accumulator produced by $X_qW_q$, its scale must match the *combined* scale of the input and weight quantization so that the addition is numerically consistent:
 
-$$
-S_B^{(j)} = S_X^{(j)} \cdot S_W^{(j)}
-$$
+$$S_B^{(j)} = S_X^{(j)} \cdot S_W^{(j)}$$
 
-$$
-B_q^{(j)} = \operatorname{round}\!\left(\frac{B^{(j)}}{S_B^{(j)}}\right)
-$$
+$$B_q^{(j)} = \text{round}\left(\frac{B^{(j)}}{S_B^{(j)}}\right)$$
 
 The result is stored as INT32, since the accumulated products $X_qW_q$ require a wider range than INT8 before requantization.
 
@@ -1161,15 +749,11 @@ The result is stored as INT32, since the accumulated products $X_qW_q$ require a
 
 After the INT32 accumulation and bias addition produce $Y_{\text{acc}}$, the result must be rescaled from the "input × weight" domain back into the INT8 domain expected by the next stage. Combining Sections 10 and 11, the requantization factor applied to every element of $Y_{\text{acc}}$ is:
 
-$$
-\text{scale} = \frac{S_X \cdot S_W}{S_{Y}}
-$$
+$$\text{scale} = \frac{S_X \cdot S_W}{S_{Y}}$$
 
 where $S_{Y}$ is the calibrated pre-activation scale for that layer (`sbo` in the implementation, short for *scale-bias-output*). This single scalar factor is precomputed once per layer during calibration and reused for every inference, rather than being recomputed per sample. Applying it and truncating to INT8 gives the pre-activation value:
 
-$$
-Y_q = \left\lfloor Y_{\text{acc}} \cdot \text{scale} \right\rfloor, \qquad -128 \le Y_q \le 127
-$$
+$$Y_q = \left\lfloor Y_{\text{acc}} \cdot \text{scale} \right\rfloor, \qquad -128 \le Y_q \le 127$$
 
 Note that the accelerator implementation uses a **floor** rather than a **round** when truncating to INT8, since the rescaling is performed directly in hardware-friendly fixed-point arithmetic.
 
@@ -1187,9 +771,7 @@ With all scales and quantized parameters computed, inference proceeds one layer 
 
 The output of this pipeline for layer $j$ becomes the input to layer $j+1$, exactly as described in Section 14:
 
-$$
-A_q^{(j)} \rightarrow X_q^{(j+1)}
-$$
+$$A_q^{(j)} \rightarrow X_q^{(j+1)}$$
 
 This repeats for every layer until the final output layer is reached, at which point the last activation output is returned as the network's quantized prediction.
 
@@ -1199,21 +781,13 @@ This repeats for every layer until the final output layer is reached, at which p
 
 The accelerator's memory is organized in byte-addressable blocks, so a 32-bit bias value cannot be written to memory as a single unit — it must be split into four INT8 byte planes before being stored. Given an INT32 bias value $b$, the four bytes are extracted as:
 
-$$
-b_0 = b \,\&\, \text{0xFF}, \qquad
-b_1 = (b \gg 8) \,\&\, \text{0xFF}
-$$
+$$b_0 = b \,\&\, \text{0xFF}, \qquad b_1 = (b \gg 8) \,\&\, \text{0xFF}$$
 
-$$
-b_2 = (b \gg 16) \,\&\, \text{0xFF}, \qquad
-b_3 = (b \gg 24) \,\&\, \text{0xFF}
-$$
+$$b_2 = (b \gg 16) \,\&\, \text{0xFF}, \qquad b_3 = (b \gg 24) \,\&\, \text{0xFF}$$
 
 Each byte plane $b_0, b_1, b_2, b_3$ is stored in memory as its own $16 \times 16$-tiled matrix. During the bias-addition stage of the matrix engine, each byte plane is added back in with the appropriate bit shift, reconstructing the full INT32 bias contribution:
 
-$$
-b = b_0 + (b_1 \ll 8) + (b_2 \ll 16) + (b_3 \ll 24)
-$$
+$$b = b_0 + (b_1 \ll 8) + (b_2 \ll 16) + (b_3 \ll 24)$$
 
 This byte-plane layout allows the same $16 \times 16$ INT8 memory and datapath used for weights and activations to also carry the wider INT32 bias values, without requiring a separate 32-bit-wide memory bank.
 
@@ -1225,16 +799,11 @@ As introduced in Section 13, nonlinear activation functions are implemented usin
 
 **ReLU LUT.** Since ReLU is piecewise linear, the LUT is populated directly from the quantized index:
 
-$$
-\text{LUT}[i + 128] = \operatorname{clip}(i,\ 0,\ 127), \qquad -128 \le i \le 127
-$$
+$$\text{LUT}[i + 128] = \text{clip}(i,\ 0,\ 127), \qquad -128 \le i \le 127$$
 
 **Sigmoid LUT.** Because sigmoid is nonlinear, each table entry must be computed by de-quantizing the index back to a floating-point value, evaluating the sigmoid function, and re-quantizing the result using the *output* activation scale $S_A$:
 
-$$
-x = i \cdot S_{Y}, \qquad y = \frac{1}{1+e^{-x}}, \qquad
-\text{LUT}[i+128] = \operatorname{clip}\!\Big(\operatorname{round}\big(y / S_A\big),\ 0,\ 127\Big)
-$$
+$$x = i \cdot S_{Y}, \qquad y = \frac{1}{1+e^{-x}}, \qquad \text{LUT}[i+128] = \text{clip}\left(\text{round}(y / S_A),\ 0,\ 127\right)$$
 
 Here $S_{Y}$ is the layer's pre-activation scale (the LUT's input domain) and $S_A$ is the layer's post-activation scale (the LUT's output domain) — the same two scales calibrated in Section 16. Because the LUT is precomputed once per layer and stored in memory, evaluating a nonlinear activation at inference time is reduced to a single indexed memory read, avoiding any exponential or floating-point computation in hardware.
 
@@ -1379,4 +948,3 @@ Tying the classes and functions above together, a typical run in the notebook fo
 ```
 
 This mirrors the mathematical pipeline of Sections 1–22: the `Matrix` class implements the tiling math (Sections 1–6), `NN.new_PTQ_model_gen` implements calibration and quantization (Sections 7–9, 16–18), and `Layer_interconnect`/`NN.quantize_forward` implement the quantized inference pipeline and instruction/memory generation (Sections 10–15, 19–22).
-
