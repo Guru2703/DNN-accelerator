@@ -1121,3 +1121,16 @@ NN.quantize_forward(inp)
 
 Because every layer's instructions are simply concatenated in order, the resulting `instr_mem.mem` is a straight-line program with no branches: the hardware's `PC` (Section 27) just walks forward through it one instruction at a time, gated only by each instruction's own multi-cycle `done` signal from `control_unit`, executing the entire network's forward pass exactly once, layer by layer, in the order the Python model generated it.
 
+
+# Result 
+
+The instr_gen file is not only used for generating instruction and memory it is also used to verify the results from hardware simulation to check the correctness . And the python file also generates the output exactly how the hardware works so there is no room for error apart from memory and instruction generation errors . 
+
+# MNIST handwritten digit recognition ml model 
+
+fp32 ML model accuracy - 96% 
+int8 PTQ accuracy - 95.8%
+accuracy between fp32 and int8 - 99%
+
+![Software output ](img.png)
+![Hardware output ](img1.png)
