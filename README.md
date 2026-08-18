@@ -1034,3 +1034,90 @@ Every instruction is a 64-bit word. The top 3 bits (`instr[63:61]`) select the o
 | **ACTIVATE** | `101` | `0x5` | Pulses `LUT_AF` to look up the activation output for the current INT8 pre-activation value. |
 
 This opcode table corresponds directly to the instruction strings emitted by `Matrix.sub_mat_mul` in the software model (Section 24): the `'000'`/`'001'` prefixes load operands into the array, `'01' + reset` selects between `MAC_ACC` (`010`) and `MAC_RESET` (`011`) depending on whether it's the first reduction block, and the `'100'`/`'101'` prefixes emitted once per layer trigger `SCALE` and `ACTIVATE`.
+
+---
+
+## 29. How the Software Generates Hardware Instructions
+
+Section 24 introduced `Matrix.sub_mat_mul` as the function that produces the accelerator's instruction stream. This section walks through exactly how it builds each 64-bit line, so that the string of `0`s and `1`s written to `instr_mem.mem` can be read directly against the opcode table in Section 28.
+
+### Every instruction is one 64-character binary string
+
+Each line `sub_mat_mul` appends to its running `instr` string is exactly 64 characters — one bit position per character — matching `Instr_Mem.sv`'s 64-bit word width, and `NN.quantize_forward` eventually writes this string to `instr_mem.mem` for `$readmemb` to load unchanged. Every instruction follows the same layout from Section 28:
+
+```text
+opcode (3) | shift (5) | smode (1) | reserved | base address (20)
+```
+
+`sub_mat_mul` builds this by literally concatenating Python strings: a 3-character opcode, followed by padding/shift/smode fields, followed by `format(addr & 0xFFFFF, '020b')` — the address, masked to 20 bits and formatted as a zero-padded binary string.
+
+### Step 1 — Configure SCALE and ACTIVATE for the layer
+
+Before generating any load or MAC instructions, `sub_mat_mul` emits two setup instructions unconditionally:
+
+```text
+instr += '100' + (41 zero bits) + <scale_addr as 20-bit binary>
+instr += '101' + (41 zero bits) + <lut_addr  as 20-bit binary>
+```
+
+These are exactly the `SCALE` (`0x4`) and `ACTIVATE` (`0x5`) opcodes from Section 28, pointed at the addresses where `Layer_interconnect.initiate_addr` earlier stored this layer's precomputed requantization scale and 256-entry activation LUT (Section 17's `_scale_addr` / `_lut_addr`). Because each FNN layer in this project produces only a single $1\times16$ output tile, one `SCALE`/`ACTIVATE` pair per layer is sufficient — a layer wide enough to need multiple output tiles would need this step repeated per output tile.
+
+### Step 2 — Stream inputs and weights through the reduction loop
+
+For every output tile `(i, j)` and every reduction step `k` along the shared $16\times16$ dimension, three instructions are emitted back-to-back:
+
+```text
+instr += '000' + '00' + (39 zero bits) + <self.address  + 4*k        as 20-bit binary>   # LOAD_INPUT
+instr += '001' + '00' + (39 zero bits) + <other.address + 64*k + 64*c_a*j as 20-bit binary>  # LOAD_WEIGHT
+instr += '01' + reset + '00' + (39 zero bits) + <out_mat.address + 4*j as 20-bit binary>  # MAC_ACC / MAC_RESET
+```
+
+- **`LOAD_INPUT` (`000`)** points at `self.address + 4*k` — each $1\times16$ input tile occupies 4 packed 32-bit words (16 bytes) in `TEST_Mem`, so advancing by `k` reduction steps moves the address by `4*k` words, matching `control_unit.sv`'s weight/input-load states, which each step `count` forward by 4.
+- **`LOAD_WEIGHT` (`001`)** points at `other.address + 64*k + 64*c_a*j` — a full $16\times16$ weight sub-tile occupies 64 words (16 rows × 4 words each), so the `64*k` term walks along the reduction dimension and `64*c_a*j` walks to the correct output-column tile.
+- **`MAC_ACC`/`MAC_RESET` (`010`/`011`)** — the opcode's last bit is `reset = str(int(not k))`: `1` (→ opcode `011`, `MAC_RESET`) on the very first reduction step (`k == 0`), clearing the PE accumulators before the first partial product, and `0` (→ opcode `010`, `MAC_ACC`) for every subsequent step, accumulating onto the existing partial sums — exactly the reset/accumulate behavior `control_unit.sv` and `Instr_Decoder.sv` implement for these two opcodes.
+
+### Step 3 — Inject the bias byte-planes
+
+If the layer has a bias (`isbias = 1`), four more groups of three instructions are appended, one per INT32 byte-plane (Section 20):
+
+```text
+for l in range(4):
+    shift = format(l*8 & 0x1F, '05b')   # 00000, 01000, 10000, 11000
+    instr += '000' + shift + '1' + (36 zero bits) + <bias_array[l].address + 4*j as 20-bit binary>  # LOAD_INPUT
+    instr += '001' + shift + '1' + (36 zero bits) + <i_mat.address              as 20-bit binary>  # LOAD_WEIGHT
+    instr += '010' + shift + '1' + (37 zero bits) + <out_mat.address + 4*j      as 20-bit binary>  # MAC_ACC
+```
+
+Here the `shift` field is computed as `l*8` for `l = 0,1,2,3` — producing `00000`, `01000`, `10000`, `11000` — the exact four values `PE.sv` checks (`5'b00000`, `5'b01000`, `5'b10000`, `5'b11000`) to decide whether to add the byte-plane product unshifted or shifted left by 8, 16, or 24 bits. The `smode` bit is set to `1` in every one of these instructions, switching the PE into byte-injection mode (Section 26) instead of ordinary matrix-multiply mode. The "weight" operand loaded here is `i_mat` — the software model's stored $16\times16$ identity matrix — so that multiplying each bias byte by 1 simply passes the byte value through to the shift-and-add logic, reusing the same MAC datapath that performs the actual matrix multiplication.
+
+### Step 4 — Assembling the full program
+
+Zooming out from a single `sub_mat_mul` call, the complete instruction stream for one inference is built up as:
+
+```text
+NN.quantize_forward(inp)
+   │
+   ├─ (first call only) for each Layer_interconnect:
+   │       initiate_addr(mem_B)
+   │         → allocates weights, 4 bias byte-planes, scale, LUT
+   │           into Mem_bank — this becomes the initial content
+   │           of TEST_Mem (memory1.mem)
+   │
+   └─ for each Layer_interconnect, in order:
+           quantize_forward_pass(imat, mem_B)
+             → calls Matrix.sub_mat_mul(...)
+                 → emits SCALE + ACTIVATE setup instructions
+                 → emits LOAD_INPUT / LOAD_WEIGHT / MAC_* per
+                   reduction step
+                 → emits LOAD_INPUT / LOAD_WEIGHT / MAC_ACC per
+                   bias byte-plane
+           instr += inter.get_instr()
+             → appends this layer's instructions to the
+               network-wide instruction string
+
+   mem_B.store_mem()        → writes memory1.mem  (data image)
+   write instr_mem.mem      → writes the full instruction string
+```
+
+Because every layer's instructions are simply concatenated in order, the resulting `instr_mem.mem` is a straight-line program with no branches: the hardware's `PC` (Section 27) just walks forward through it one instruction at a time, gated only by each instruction's own multi-cycle `done` signal from `control_unit`, executing the entire network's forward pass exactly once, layer by layer, in the order the Python model generated it.
+
