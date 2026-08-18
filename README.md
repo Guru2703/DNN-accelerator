@@ -1,5 +1,130 @@
 # DNN-accelerator
- 
+# DNN-accelerator
+
+# Table of Contents
+
+- [Introduction](#introduction)
+
+## Mathematical Formulation and Matrix Tiling
+
+- [1. Fully Connected Neural Network](#1-fully-connected-neural-network)
+- [2. Fully Connected Layer as Matrix Multiplication](#2-fully-connected-layer-as-matrix-multiplication)
+- [3. Representing Multiple Inputs as a Matrix](#3-representing-multiple-inputs-as-a-matrix)
+- [4. Matrix Tiling](#4-matrix-tiling)
+- [5. Matrix Multiplication Using Sub-Matrices](#5-matrix-multiplication-using-sub-matrices)
+- [6. Mapping the Mathematics to the Accelerator](#6-mapping-the-mathematics-to-the-accelerator)
+
+## Quantization
+
+- [Quantization](#quantization)
+- [7. Quantization Scale and Resolution](#7-quantization-scale-and-resolution)
+- [8. Weight Quantization](#8-weight-quantization)
+- [9. Activation Quantization](#9-activation-quantization)
+- [10. Quantization Before and After Activation](#10-quantization-before-and-after-activation)
+- [11. Quantization Before the Activation Function](#11-quantization-before-the-activation-function)
+- [12. Quantization After the Activation Function](#12-quantization-after-the-activation-function)
+- [13. Activation Function Using a Lookup Table](#13-activation-function-using-a-lookup-table)
+- [14. Complete Quantized FNN Inference](#14-complete-quantized-fnn-inference)
+- [15. Complete Quantized FNN Inference Flow](#15-complete-quantized-fnn-inference-flow)
+- [16. Post-Training Quantization (PTQ) Calibration](#16-post-training-quantization-ptq-calibration)
+- [17. Weight and Bias Quantization Implementation](#17-weight-and-bias-quantization-implementation)
+- [18. The Requantization Scale](#18-the-requantization-scale)
+- [19. Quantized Forward Pass](#19-quantized-forward-pass)
+- [20. Splitting the INT32 Bias for Storage](#20-splitting-the-int32-bias-for-storage)
+- [21. Building the Activation Lookup Table](#21-building-the-activation-lookup-table)
+- [22. Summary: From Floating-Point Model to Accelerator Memory](#22-summary-from-floating-point-model-to-accelerator-memory)
+
+## Software Implementation
+
+- [23. Class Overview](#23-class-overview)
+- [24. Important Functions Explained](#24-important-functions-explained)
+- [25. End-to-End Software Flow](#25-end-to-end-software-flow)
+
+## Hardware Architecture
+
+- [26. What Is a Systolic Array](#26-what-is-a-systolic-array)
+- [27. Other Important Hardware Blocks](#27-other-important-hardware-blocks)
+- [28. Instruction Set](#28-instruction-set)
+- [29. How the Software Generates Hardware Instructions](#29-how-the-software-generates-hardware-instructions)
+
+## Results
+
+- [30. Verification Methodology](#30-verification-methodology)
+- [31. MNIST Handwritten Digit Recognition — Accuracy](#31-mnist-handwritten-digit-recognition--accuracy)
+  - [Hardware Simulation Output](#hardware-simulation-output)
+  - [Software (Python Model) Output](#software-python-model-output)
+
+---
+
+# Introduction
+
+The **DNN-accelerator** is a hardware accelerator designed to execute quantized Fully Connected Neural Network (FNN) inference using a fixed-size matrix computation architecture.
+
+The project combines a software-based neural-network model, post-training quantization, instruction generation, memory generation, and an RTL hardware implementation. The overall objective is to transform a trained floating-point neural network into an accelerator-ready representation that can be executed using INT8 arithmetic.
+
+The accelerator is based on a **1 × 16 systolic array** and supports the fundamental matrix operation:
+
+$$
+(1 \times 16) \times (16 \times 16) = (1 \times 16)
+$$
+
+Larger fully connected layers are divided into smaller blocks so that the complete matrix multiplication can be executed as a sequence of fixed-size operations.
+
+The software model performs the following major tasks:
+
+- Represents the neural network and its layers.
+- Performs floating-point inference.
+- Performs post-training quantization (PTQ).
+- Quantizes weights and activations to INT8.
+- Quantizes biases to INT32.
+- Generates requantization scales.
+- Generates activation lookup tables.
+- Splits INT32 biases into four INT8 byte planes.
+- Generates the accelerator memory image.
+- Generates the 64-bit instruction stream.
+
+The generated memory image and instruction stream are then consumed by the RTL accelerator.
+
+The hardware architecture contains a **1 × 16 systolic array of Processing Elements (PEs)** along with instruction memory, data memory, shift registers, a control unit, a requantization unit, and an activation lookup table.
+
+The complete inference pipeline can be summarized as:
+
+```text
+              Trained FP32 Model
+                      │
+                      ▼
+             PTQ Calibration
+                      │
+                      ▼
+              Quantized Model
+                      │
+          ┌───────────┴───────────┐
+          ▼                       ▼
+     Memory Image           Instruction Stream
+          │                       │
+          └───────────┬───────────┘
+                      ▼
+              RTL Accelerator
+                      │
+                      ▼
+              INT8 Matrix MAC
+                      │
+                      ▼
+              INT32 Accumulation
+                      │
+                      ▼
+                Bias Addition
+                      │
+                      ▼
+                Requantization
+                      │
+                      ▼
+               Activation LUT
+                      │
+                      ▼
+              Quantized Output
+```
+
 # Mathematical Formulation and Matrix Tiling
  
 A Fully Connected (FC) layer in a neural network can be represented as a matrix multiplication followed by bias addition and an activation function. This representation allows the computation of a DNN layer to be mapped onto the matrix-multiplication hardware of the accelerator.
