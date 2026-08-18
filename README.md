@@ -1,5 +1,4 @@
 # DNN-accelerator
-# DNN-accelerator
 
 # Table of Contents
 
@@ -124,6 +123,33 @@ The complete inference pipeline can be summarized as:
                       ▼
               Quantized Output
 ```
+The project is organized into four major parts:
+
+1. **Mathematical Formulation and Matrix Tiling** — explains how an FNN is represented mathematically and how large matrix operations are mapped to fixed-size accelerator operations.
+
+2. **Quantization** — explains INT8 quantization, quantization scales, activation quantization, PTQ calibration, requantization, bias representation, and LUT-based activation functions.
+
+3. **Software Implementation** — describes the Python model used to simulate the accelerator, generate quantized parameters, create the memory image, and generate hardware instructions.
+
+4. **Hardware Architecture** — describes the RTL implementation, systolic array, processing elements, memory, instruction set, control unit, scaling unit, and activation LUT.
+
+Finally, the accelerator is verified using an **MNIST handwritten-digit recognition model** by comparing the floating-point model, the quantized software model, and the RTL hardware simulation.
+
+The complete project therefore forms an end-to-end flow:
+
+$$
+\text{FP32 Neural Network}
+\rightarrow
+\text{PTQ}
+\rightarrow
+\text{INT8 Model}
+\rightarrow
+\text{Instruction/Memory Generation}
+\rightarrow
+\text{RTL Accelerator}
+\rightarrow
+\text{FNN Inference}
+$$
 
 # Mathematical Formulation and Matrix Tiling
  
