@@ -948,3 +948,89 @@ Tying the classes and functions above together, a typical run in the notebook fo
 ```
 
 This mirrors the mathematical pipeline of Sections 1–22: the `Matrix` class implements the tiling math (Sections 1–6), `NN.new_PTQ_model_gen` implements calibration and quantization (Sections 7–9, 16–18), and `Layer_interconnect`/`NN.quantize_forward` implement the quantized inference pipeline and instruction/memory generation (Sections 10–15, 19–22).
+
+---
+
+# Hardware Architecture
+
+The software model in the previous section produces two artifacts for every inference: a memory image (`memory1.mem`) and an instruction stream (`instr_mem.mem`). These are exactly what the RTL design consumes. This section explains the hardware that executes them, built around a **16 × 16 systolic array** of processing elements.
+
+## 26. What Is a Systolic Array
+
+A systolic array is a grid of small, identical processing elements (PEs) that are connected only to their immediate neighbors. Instead of routing every operand from a central register file to a central ALU the way a conventional processor would, each PE reads its operands from the neighbor above and to the side, does one multiply-accumulate, and passes the same operands on to the next neighbor on the following clock cycle. Data "pulses" through the grid the way blood pulses through a body — which is where the name comes from.
+
+This structure suits matrix multiplication particularly well: a $16 \times 16$ weight tile can be held stationary across the grid while a stream of activation values flows through it one row at a time, and every PE contributes one term to the dot product for its output position on every cycle it's active. This is precisely the $(1 \times 16) \times (16 \times 16) = (1 \times 16)$ operation described in Section 6 of the mathematical formulation — the systolic array is the hardware realization of that fixed-size matrix operation.
+
+![Systolic Array Dataflow](images/systolic_array.gif)
+
+### The Processing Element (`PE.sv`)
+
+Each PE in the grid is a single multiply-accumulate unit with two operand inputs (`north`, `east`) and two pass-through outputs (`north_out`, `east_out`) that simply register and forward whatever arrived this cycle to the next PE in the chain. Internally it keeps one 32-bit signed accumulator (`acc`).
+
+The PE actually supports **two accumulation modes**, selected by the `smode` control bit:
+
+- **Matrix-multiply mode (`smode = 0`)** — the standard systolic MAC: `acc <= acc + (north * east) <<< shift`. The `shift` field lets the same multiply-accumulate path be reused for scaled contributions.
+- **Byte-injection mode (`smode = 1`)** — a special mode used only to inject the split INT32 bias byte-planes (Section 20) back into the accumulator at the correct bit position. Depending on `shift` (`00000`, `01000`, `10000`, `11000`), the raw product `north*east` is added in unshifted, or shifted left by 8, 16, or 24 bits — i.e. placed into byte 0, 1, 2, or 3 of the accumulator. This is how the four separately-stored bias byte-planes are recombined into a single INT32 value using the *same* MAC hardware that performs the matrix multiplication, rather than a dedicated adder.
+
+### The 16×16 Grid
+
+Sixteen `Shift_Reg_1x16` weight registers (one per column) and one input `Shift_Reg_1x16` feed the array's edges. During a compute instruction, `control_unit.sv` doesn't turn the whole array on at once — it activates PEs **one diagonal at a time**, growing the active diagonal from a single PE up to the full 16-wide diagonal and then shrinking it back down (the `pe_en`/`w_shift` bit-masks step through `16'h0001 → 16'h0003 → 16'h0007 → … → 16'hFFFF → 16'hFFFE → … → 16'h0000`). This is the classic systolic **wavefront fill/drain** pattern: it takes 16 cycles for the data to fill the array and a further ~16–18 cycles for the last partial sums to drain out the far edge, which is why a single MAC instruction occupies roughly 34 clock cycles in `control_unit.sv`.
+
+Because each PE only ever talks to its immediate neighbors, the array's wiring is entirely local and regular — the same PE cell is simply replicated 256 times — which is what makes a systolic array easy to scale up and lay out efficiently on silicon or an FPGA, at the cost of having to pipeline data in and out through this fill/drain wave rather than accessing it randomly.
+
+---
+
+## 27. Other Important Hardware Blocks
+
+Beyond the systolic array itself, the following blocks form the rest of the accelerator's datapath. (Architecture diagram to be added.)
+
+![Accelerator Architecture](images/architecture.png)
+
+### `PC.sv` — Program Counter
+A simple 16-bit counter addressing `Instr_Mem`. It only advances when `Instr_Decoder` asserts `next` — i.e. once the current instruction's multi-cycle execution has fully completed — so instruction fetch is entirely gated on execution completion rather than running freely.
+
+### `Instr_Mem.sv` — Instruction Memory
+A 64-bit-wide, 65536-entry memory (loaded from `test_instr.mem`, the exact file the software model's `quantize_forward` writes out) that supplies one 64-bit instruction word per program-counter address.
+
+### `Instr_Decoder.sv` — Instruction Decoder
+Reads the top 3 bits of the 64-bit instruction (`instr[63:61]`) as the opcode and turns it into the one-hot control signals `is_datain`, `is_start`, `is_scale`, `is_lut`, plus the `mode` bit (input vs. weight load) and `reset_SA` bit (whether this MAC pass should clear the array's accumulators first). It also latches the `shift` (`instr[60:56]`) and `smode` (`instr[55]`) fields that `PE.sv` consumes. It holds the decoded instruction active for as long as `control_unit` needs (using its own two-state fetch/execute sequencer) and only pulses `next` once `control_unit` reports `done`.
+
+### `control_unit.sv` — Micro-Sequencer
+The workhorse FSM that expands a single instruction into the many clock cycles actually needed to drive the hardware: it generates the diagonal wavefront `pe_en`/`w_shift` patterns described above for MAC instructions, the shift/enable timing for loading 16 bytes into a weight or input register over multiple cycles, the `count` byte-offset counter used to walk through consecutive memory addresses during a burst, and the `scale_en`/`lut_en` pulses that hand a value to the `scale` or `LUT_AF` units. It reports `done` back to `Instr_Decoder` when a given instruction's micro-sequence finishes.
+
+### `TEST_Mem.sv` — Main Data Memory
+The hardware counterpart of the notebook's `Mem_bank`: a 32-bit-wide memory addressed by `instr[19:0] + count`, read or written 4 bytes (one packed INT8×4 word) at a time. Weights, activations, split bias byte-planes, the requantization scale, and the LUT are all stored here at the addresses the software model computed during `initiate_addr`/`allocate_*_memory`.
+
+### `Shift_Reg_1x16.sv` — Serial Load/Shift Register
+A 16-deep, 8-bit-wide shift register used both for the single activation-input lane and, instantiated 16 times, for the 16 weight-column lanes feeding the systolic array. It supports two operations: a parallel `en`-driven load of 16 new bytes (4 packed 32-bit words) from `TEST_Mem`, and a serial `shift`-driven walk that advances existing contents by one position per cycle — this is what actually streams a row of activations or a column of weights into the array one byte per cycle, in sync with the wavefront pattern from `control_unit`.
+
+### `scale.sv` — Requantization Unit
+Implements the fixed-point multiply from Section 18 ($Y_{\text{acc}} \cdot \text{scale}$) without a full 32×32 hardware multiplier: it multiplies the INT32 accumulator against each of the scale factor's four bytes separately, sign-extending and accumulating one byte-slice at a time, and keeps only the top byte of the final running sum as the INT8 requantized result. This is a manual, byte-serial equivalent of the single `scalar_mul` + floor step performed in software.
+
+### `LUT_AF.sv` — Activation Lookup Table
+The hardware form of the 256-entry LUT from Section 21: an 8-bit-addressed, 256-entry INT8 memory. It is written 4 bytes at a time (at a fixed offset `+0xF0` from the addressed word so writes and reads land in different halves of the table's staging path) whenever a new layer's LUT is loaded, and read directly by address during activation lookups — turning the nonlinear activation evaluation into a single memory access, exactly as described in Section 13.
+
+---
+
+## 28. Instruction Set
+
+Every instruction is a 64-bit word. The top 3 bits (`instr[63:61]`) select the operation; the next 5 bits (`instr[60:56]`) carry a shift amount used either for bias byte-plane injection (Section 20) or for scaled accumulation; bit `instr[55]` selects the PE's accumulation mode (`smode`); and the low 20 bits (`instr[19:0]`) carry a base memory address into `TEST_Mem` (65536 × 16 addressable rows, matching the software model's `Mem_bank`).
+
+```text
+ 63    61 60      56 55     54                     20 19          0
+┌────────┬──────────┬───┬──────────────────────────┬──────────────┐
+│ OPCODE │  SHIFT    │SM │        (reserved)        │ BASE ADDRESS │
+│  [3]   │   [5]     │[1]│                          │    [20]      │
+└────────┴──────────┴───┴──────────────────────────┴──────────────┘
+```
+
+| Instruction | Opcode (bin) | Opcode (hex) | Purpose |
+|---|---|---|---|
+| **LOAD_INPUT** | `000` | `0x0` | Loads/shifts new INT8 activation bytes into the input shift register (`mode = 0`). |
+| **LOAD_WEIGHT** | `001` | `0x1` | Loads/shifts new INT8 weight bytes into the 16 weight-column shift registers (`mode = 1`). |
+| **MAC_ACC** | `010` | `0x2` | Runs one systolic multiply-accumulate pass over the array **without** resetting existing partial sums — used to accumulate across successive $16\times16$ input/weight blocks, or to inject a bias byte-plane via `PE.sv`'s byte-injection mode. |
+| **MAC_RESET** | `011` | `0x3` | Same as `MAC_ACC`, but first clears every PE's accumulator (`reset_SA = 1`) — used for the first block of a new output tile. |
+| **SCALE** | `100` | `0x4` | Pulses the `scale` unit to requantize the INT32 accumulator down to INT8 using the layer's precomputed scale factor. |
+| **ACTIVATE** | `101` | `0x5` | Pulses `LUT_AF` to look up the activation output for the current INT8 pre-activation value. |
+
+This opcode table corresponds directly to the instruction strings emitted by `Matrix.sub_mat_mul` in the software model (Section 24): the `'000'`/`'001'` prefixes load operands into the array, `'01' + reset` selects between `MAC_ACC` (`010`) and `MAC_RESET` (`011`) depending on whether it's the first reduction block, and the `'100'`/`'101'` prefixes emitted once per layer trigger `SCALE` and `ACTIVATE`.
