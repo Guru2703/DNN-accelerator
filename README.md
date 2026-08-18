@@ -951,11 +951,9 @@ A systolic array is a grid of small, identical processing elements (PEs) that ar
  
 This structure suits matrix multiplication particularly well: a $16 \times 16$ weight tile can be held stationary across the array while a stream of activation values flows through it one element at a time, and every PE contributes one term to the dot product for its output position on every cycle it's active. This is precisely the $(1 \times 16) \times (16 \times 16) = (1 \times 16)$ operation described in Section 6 of the mathematical formulation — the systolic array is the hardware realization of that fixed-size matrix operation.
  
-**Systolic Array Wavefront Animation**
- 
-<video src="images/SA_animation.mp4" controls width="700">
-Your browser does not support inline video playback. You can view the file directly at <code>images/SA_animation.mp4</code>.
-</video>
+**Systolic Array Flow Animation**
+ ![SA Flow](images/SA_animation.gif)
+
 ### The Processing Element (`PE.sv`)
  
 Each PE in the array is a single multiply-accumulate unit with two operand inputs (`north`, `east`) and two pass-through outputs (`north_out`, `east_out`) that simply register and forward whatever arrived this cycle to the next PE in the chain. Internally it keeps one 32-bit signed accumulator (`acc`).
