@@ -703,11 +703,11 @@ For every layer $j$, three separate ranges are tracked while the calibration inp
 
 For each calibration sample $x_i$, the floating-point forward pass is executed and the observed minimum and maximum of each tensor is appended to a running list:
 
-$$\text{max\_layer}[j] = \max_i \big(\max(X_i^{(j)})\big), \qquad \text{min\_layer}[j] = \min_i \big(\min(X_i^{(j)})\big)$$
+$$\text{maxLayer}[j] = \max_i \big(\max(X_i^{(j)})\big), \qquad \text{minLayer}[j] = \min_i \big(\min(X_i^{(j)})\big)$$
 
-$$\text{max\_bact}[j] = \max_i \big(\max(Y_i^{(j)})\big), \qquad \text{min\_bact}[j] = \min_i \big(\min(Y_i^{(j)})\big)$$
+$$\text{maxBact}[j] = \max_i \big(\max(Y_i^{(j)})\big), \qquad \text{minBact}[j] = \min_i \big(\min(Y_i^{(j)})\big)$$
 
-$$\text{max\_aact}[j] = \max_i \big(\max(A_i^{(j)})\big), \qquad \text{min\_aact}[j] = \min_i \big(\min(A_i^{(j)})\big)$$
+$$\text{maxAact}[j] = \max_i \big(\max(A_i^{(j)})\big), \qquad \text{minAact}[j] = \min_i \big(\min(A_i^{(j)})\big)$$
 
 Once calibration is complete, each tensor's symmetric scale is derived from the largest absolute value observed across the calibration set:
 
