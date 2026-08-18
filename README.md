@@ -43,7 +43,7 @@ $$X = \begin{bmatrix} x_0 & x_1 & \cdots & x_{N-1} \end{bmatrix}$$
 
 The weights connecting the input neurons to the output neurons can be represented as a matrix:
 
-$$W = \begin{bmatrix} w_{00} & w_{01} & \cdots & w_{0,M-1} \\ w_{10} & w_{11} & \cdots & w_{1,M-1} \\ \vdots & \vdots & \ddots & \vdots \\ w_{N-1,0} & w_{N-1,1} & \cdots & w_{N-1,M-1} \end{bmatrix}$$
+$$W = \begin{bmatrix} w_{00} & w_{01} & \cdots & w_{0,M-1} \\\\ w_{10} & w_{11} & \cdots & w_{1,M-1} \\\\ \vdots & \vdots & \ddots & \vdots \\\\ w_{N-1,0} & w_{N-1,1} & \cdots & w_{N-1,M-1} \end{bmatrix}$$
 
 where:
 
@@ -89,7 +89,7 @@ When multiple input samples are processed together, the input vectors can be arr
 
 For a batch containing $K$ input samples:
 
-$$X = \begin{bmatrix} x_{0,0} & x_{0,1} & \cdots & x_{0,N-1} \\ x_{1,0} & x_{1,1} & \cdots & x_{1,N-1} \\ \vdots & \vdots & \ddots & \vdots \\ x_{K-1,0} & x_{K-1,1} & \cdots & x_{K-1,N-1} \end{bmatrix}$$
+$$X = \begin{bmatrix} x_{0,0} & x_{0,1} & \cdots & x_{0,N-1} \\\\ x_{1,0} & x_{1,1} & \cdots & x_{1,N-1} \\\\ \vdots & \vdots & \ddots & \vdots \\\\ x_{K-1,0} & x_{K-1,1} & \cdots & x_{K-1,N-1} \end{bmatrix}$$
 
 where:
 
@@ -125,7 +125,7 @@ For example, a matrix of size $20 \times 30$ is padded to $32 \times 32$.
 
 The padded matrix can then be represented as a matrix of 16 × 16 sub-matrices:
 
-$$A = \begin{bmatrix} A_{00} & A_{01} \\ A_{10} & A_{11} \end{bmatrix}$$
+$$A = \begin{bmatrix} A_{00} & A_{01} \\\\ A_{10} & A_{11} \end{bmatrix}$$
 
 where each sub-matrix has dimensions:
 
@@ -141,7 +141,7 @@ Zero-padding allows the accelerator to maintain a fixed 16 × 16 computation siz
 
 Consider two matrices partitioned into 16 × 16 sub-matrices:
 
-$$A = \begin{bmatrix} A_{00} & A_{01} \\ A_{10} & A_{11} \end{bmatrix} \qquad B = \begin{bmatrix} B_{00} & B_{01} \\ B_{10} & B_{11} \end{bmatrix}$$
+$$A = \begin{bmatrix} A_{00} & A_{01} \\\\ A_{10} & A_{11} \end{bmatrix} \qquad B = \begin{bmatrix} B_{00} & B_{01} \\\\ B_{10} & B_{11} \end{bmatrix}$$
 
 The matrix multiplication is:
 
@@ -149,7 +149,7 @@ $$C = AB$$
 
 where the resulting matrix is:
 
-$$C = \begin{bmatrix} C_{00} & C_{01} \\ C_{10} & C_{11} \end{bmatrix}$$
+$$C = \begin{bmatrix} C_{00} & C_{01} \\\\ C_{10} & C_{11} \end{bmatrix}$$
 
 The output sub-matrices are calculated as:
 
@@ -189,7 +189,7 @@ $$X_0 = \begin{bmatrix} x_0 & x_1 & \cdots & x_{15} \end{bmatrix}$$
 
 The corresponding weights are stored as a $16 \times 16$ matrix:
 
-$$W_0 = \begin{bmatrix} w_{00} & w_{01} & \cdots & w_{0,15} \\ w_{10} & w_{11} & \cdots & w_{11,15} \\ \vdots & \vdots & \ddots & \vdots \\ w_{15,0} & w_{15,1} & \cdots & w_{15,15} \end{bmatrix}$$
+$$W_0 = \begin{bmatrix} w_{00} & w_{01} & \cdots & w_{0,15} \\\\ w_{10} & w_{11} & \cdots & w_{11,15} \\\\ \vdots & \vdots & \ddots & \vdots \\\\ w_{15,0} & w_{15,1} & \cdots & w_{15,15} \end{bmatrix}$$
 
 The accelerator then computes:
 
@@ -211,7 +211,7 @@ where $X_0 \in \mathbb{R}^{1 \times 16}$ and $X_1 \in \mathbb{R}^{1 \times 16}$.
 
 The corresponding weight matrix can be partitioned as:
 
-$$W = \begin{bmatrix} W_0 \\ W_1 \end{bmatrix}$$
+$$W = \begin{bmatrix} W_0 \\\\ W_1 \end{bmatrix}$$
 
 where $W_0 \in \mathbb{R}^{16 \times 16}$ and $W_1 \in \mathbb{R}^{16 \times 16}$.
 
