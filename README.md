@@ -1133,4 +1133,4 @@ int8 PTQ accuracy - 95.85%
 accuracy between fp32 and int8 - 99.48%
 
 ![Software output ](images/hardware_output.png)
-![Hardware output ](images/Screenshot (1214).png)
+![Hardware output ](images/python_output.png)
