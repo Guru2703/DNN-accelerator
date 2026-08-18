@@ -953,7 +953,7 @@ This mirrors the mathematical pipeline of Sections 1–22: the `Matrix` class im
 
 # Hardware Architecture
 
-The software model in the previous section produces two artifacts for every inference: a memory image (`memory1.mem`) and an instruction stream (`instr_mem.mem`). These are exactly what the RTL design consumes. This section explains the hardware that executes them, built around a **16 × 16 systolic array** of processing elements.
+The software model in the previous section produces two artifacts for every inference: a memory image (`memory1.mem`) and an instruction stream (`instr_mem.mem`). These are exactly what the RTL design consumes. This section explains the hardware that executes them, built around a **1 × 16 systolic array** of processing elements.
 
 ## 26. What Is a Systolic Array
 
@@ -961,7 +961,7 @@ A systolic array is a grid of small, identical processing elements (PEs) that ar
 
 This structure suits matrix multiplication particularly well: a $16 \times 16$ weight tile can be held stationary across the grid while a stream of activation values flows through it one row at a time, and every PE contributes one term to the dot product for its output position on every cycle it's active. This is precisely the $(1 \times 16) \times (16 \times 16) = (1 \times 16)$ operation described in Section 6 of the mathematical formulation — the systolic array is the hardware realization of that fixed-size matrix operation.
 
-![Systolic Array Dataflow](images/systolic_array.gif)
+![Systolic Array Dataflow](images/SA_animation.mp4)
 
 ### The Processing Element (`PE.sv`)
 
@@ -984,7 +984,7 @@ Because each PE only ever talks to its immediate neighbors, the array's wiring i
 
 Beyond the systolic array itself, the following blocks form the rest of the accelerator's datapath. (Architecture diagram to be added.)
 
-![Accelerator Architecture](images/architecture.png)
+![Accelerator Architecture](images/arch.png)
 
 ### `PC.sv` — Program Counter
 A simple 16-bit counter addressing `Instr_Mem`. It only advances when `Instr_Decoder` asserts `next` — i.e. once the current instruction's multi-cycle execution has fully completed — so instruction fetch is entirely gated on execution completion rather than running freely.
