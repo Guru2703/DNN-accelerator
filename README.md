@@ -781,9 +781,9 @@ This repeats for every layer until the final output layer is reached, at which p
 
 The accelerator's memory is organized in byte-addressable blocks, so a 32-bit bias value cannot be written to memory as a single unit — it must be split into four INT8 byte planes before being stored. Given an INT32 bias value $b$, the four bytes are extracted as:
 
-$$b_0 = b \,\&\, \text{0xFF}, \qquad b_1 = (b \gg 8) \,\&\, \text{0xFF}$$
+$$b_0 = b \ \text{AND}\ \text{0xFF}, \qquad b_1 = (b \gg 8) \ \text{AND}\ \text{0xFF}$$
 
-$$b_2 = (b \gg 16) \,\&\, \text{0xFF}, \qquad b_3 = (b \gg 24) \,\&\, \text{0xFF}$$
+$$b_2 = (b \gg 16) \ \text{AND}\ \text{0xFF}, \qquad b_3 = (b \gg 24) \ \text{AND}\ \text{0xFF}$$
 
 Each byte plane $b_0, b_1, b_2, b_3$ is stored in memory as its own $16 \times 16$-tiled matrix. During the bias-addition stage of the matrix engine, each byte plane is added back in with the appropriate bit shift, reconstructing the full INT32 bias contribution:
 
