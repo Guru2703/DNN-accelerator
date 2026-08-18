@@ -1132,5 +1132,5 @@ fp32 ML model accuracy - 96.43%
 int8 PTQ accuracy - 95.85%
 accuracy between fp32 and int8 - 99.48%
 
-![Software output ](img.png)
-![Hardware output ](img1.png)
+![Software output ](images/hardware_output.png)
+![Hardware output ](images/Screenshot (1214).png)
