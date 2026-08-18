@@ -1128,9 +1128,9 @@ The instr_gen file is not only used for generating instruction and memory it is 
 
 # MNIST handwritten digit recognition ml model 
 
-fp32 ML model accuracy - 96% 
-int8 PTQ accuracy - 95.8%
-accuracy between fp32 and int8 - 99%
+fp32 ML model accuracy - 96.43% 
+int8 PTQ accuracy - 95.85%
+accuracy between fp32 and int8 - 99.48%
 
 ![Software output ](img.png)
 ![Hardware output ](img1.png)
