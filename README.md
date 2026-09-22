@@ -1328,10 +1328,6 @@ The post-implementation design achieved positive setup slack with no failing tim
 ### Measured Latency
 
 Complete inference latency is calculated from the number of clock cycles between the start of inference and the final valid output:
-
-$$
-Latency =
-264.7 micro seconds to infer ML model used in this readme .
-$$
+Measured inference latency: 264.7 μs
 
 
